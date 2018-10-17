@@ -135,7 +135,7 @@ h('Twitter_toku_grnd', 'https://rsshub.app/twitter/user/toku_grnd.json?limit=1',
 h('Twitter_MARiA_GRND', 'https://rsshub.app/twitter/user/MARiA_GRND.json?limit=1', '【@MARiA_GRND】的Twitter更新了！！', null);
 
 // Weibo
-h('Twitter_MARiA_GARNiDELiA', 'https://rsshub.app/weibo/user2/2060888642.json?limit=1', '【@MARiA_GARNiDELiA】的Weibo更新了！！', null);
+h('Weibo_MARiA_GARNiDELiA', 'https://rsshub.app/weibo/user2/2060888642.json?limit=1', '【@MARiA_GARNiDELiA】的Weibo更新了！！', null);
 
 // Bilibili
 h('Bilibili_GARNiDELiA', 'https://rsshub.app/bilibili/user/dynamic/111939335.json?limit=1', '【@GARNiDELiA】的Bilibili更新了！！', null);
