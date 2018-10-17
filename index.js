@@ -115,12 +115,14 @@ async function h(_name, _rssUrl, _title, _rss_version) {
             }).catch(err => {
                 console.log(new Date() + ':' + _name + '更新发送失败\n' + err);
             })
+        }else{
+            console.log(new Date() + ':' + _name + '没有更新，最后更新于：' + new Date(e.items[0].date_published))
         }
         setTimeout(() => {
             h(_name, _rssUrl, _title, _RSS_VERSION);
         }, 1000 * 60 * 5);
     } catch (error) {
-        console.log(new Date() + ':' + '请求RSSHub失败\n' + error);
+        console.log(new Date() + ':' + _name + '请求RSSHub失败\n' + error);
         setTimeout(() => {
             h(_name, _rssUrl, _title, _RSS_VERSION);
         }, 1000 * 5);
