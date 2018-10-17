@@ -55,7 +55,7 @@ async function h(_name, _rssUrl, _title, _rss_version) {
         })
         let date = (new Date(e.items[0].date_published)).getTime();
         if (_RSS_VERSION === null) {
-            console.log('首次请求' + _name);
+            console.log(new Date() + ':首次请求' + _name);
             _RSS_VERSION = date;
             setTimeout(() =>{
                 h(_name, _rssUrl, _title, _RSS_VERSION);
@@ -63,7 +63,7 @@ async function h(_name, _rssUrl, _title, _rss_version) {
             return false;
         }
         if (_RSS_VERSION < date) {
-            console.log(_name + '有更新');
+            console.log(new Date() + ':' + _name + '有更新');
             const $ = cheerio.load('<div class="_x">' + htmlDecode(e.items[0].summary) + '</div>');
             let imgArr = '';
             for (let index = 0; index < $('img').length; index++) {
@@ -85,7 +85,7 @@ async function h(_name, _rssUrl, _title, _rss_version) {
                             const data = "base64://" + Buffer.from(response, 'utf-8').toString('base64');
                             imgArr += '[CQ:image,file=' + data + ']';
                         } catch (error) {
-                            console.log(_name + '图片抓取失败\n' + error);
+                            console.log(new Date() + ':' + _name + '图片抓取失败\n' + error);
                         }
                     };
                 }
@@ -95,10 +95,12 @@ async function h(_name, _rssUrl, _title, _rss_version) {
             let text = $('._x').text();
             let fanyiText = await fanyi(text);
             let img = imgArr === '' ? '暂无' : imgArr;
+            let title = e.items[0].title === '' ? '' : ('\n标题：' + e.items[0].title);
             bot('send_group_msg', {
                 group_id: 57556801,
                 message: _title +
                 '\n-------------------------------------------' +
+                title +
                 '\n内容：' + text +
                 '\n翻译：' + fanyiText.trans_result[0].dst +
                 '\n媒体：\n' + img +
@@ -109,25 +111,34 @@ async function h(_name, _rssUrl, _title, _rss_version) {
                 '\n问题反馈群内联系：1733708055'
             }).then(() => {
                 _RSS_VERSION = date;
-                console.log(_name + '更新发送成功');
+                console.log(new Date() + ':' + _name + '更新发送成功');
             }).catch(err => {
-                console.log(_name + '更新发送失败\n' + err);
+                console.log(new Date() + ':' + _name + '更新发送失败\n' + err);
             })
         }
         setTimeout(() => {
             h(_name, _rssUrl, _title, _RSS_VERSION);
         }, 1000 * 60 * 5);
     } catch (error) {
-        console.log('请求RSSHub失败\n' + error);
+        console.log(new Date() + ':' + '请求RSSHub失败\n' + error);
         setTimeout(() => {
             h(_name, _rssUrl, _title, _RSS_VERSION);
         }, 1000 * 5);
     }
 };
+
+// Twitter
 h('Twitter_GARNIDELIA', 'https://rsshub.app/twitter/user/GARNiDELiA.json?limit=1', '【@GARNIDELIA】的Twitter更新了！！', null);
 h('Twitter_toku_grnd', 'https://rsshub.app/twitter/user/toku_grnd.json?limit=1', '【@toku_grnd】的Twitter更新了！！', null);
 h('Twitter_MARiA_GRND', 'https://rsshub.app/twitter/user/MARiA_GRND.json?limit=1', '【@MARiA_GRND】的Twitter更新了！！', null);
 
+// Weibo
+h('Twitter_MARiA_GARNiDELiA', 'https://rsshub.app/weibo/user/2060888642.json?limit=1', '【@MARiA_GARNiDELiA】的Weibo更新了！！', null);
+
+// Bilibili
+h('Bilibili_GARNiDELiA', 'https://rsshub.app/bilibili/user/dynamic/111939335.json?limit=1', '【@GARNiDELiA】的Bilibili更新了！！', null);
+
+// Instagram
 h('Instagram_maria_grnd', 'https://rsshub.app/instagram/user/maria_grnd.json?limit=1', '【@maria_grnd】的Instagram更新了！！', null);
 h('Instagram_toku_grnd', 'https://rsshub.app/instagram/user/toku_grnd.json?limit=1', '【@toku_grnd】的Instagram更新了！！', null);
 
