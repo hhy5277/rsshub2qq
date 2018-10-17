@@ -5,6 +5,7 @@ const rp = require('request-promise');
 const cheerio = require('cheerio');
 const MD5 = require('js-md5');
 const Agent = require('socks5-https-client/lib/Agent');
+const clc = require("cli-color");
 const fs = require('fs').promises;
 
 let bot = new CQHttp({
@@ -55,7 +56,7 @@ async function h(_name, _rssUrl, _title, _rss_version) {
         })
         let date = (new Date(e.items[0].date_published)).getTime();
         if (_RSS_VERSION === null) {
-            console.log(new Date() + ':首次请求' + _name);
+            console.log(clc.cyan(new Date() + '：') + '首次请求 ' + clc.magenta(_name));
             _RSS_VERSION = date;
             setTimeout(() =>{
                 h(_name, _rssUrl, _title, _RSS_VERSION);
@@ -63,7 +64,7 @@ async function h(_name, _rssUrl, _title, _rss_version) {
             return false;
         }
         if (_RSS_VERSION < date) {
-            console.log(new Date() + ':' + _name + '有更新');
+            console.log(clc.cyan(new Date() + '：') + '发现更新 ' + clc.magenta(_name));
             const $ = cheerio.load('<div class="_x">' + htmlDecode(e.items[0].summary) + '</div>');
             let imgArr = '';
             for (let index = 0; index < $('img').length; index++) {
@@ -85,7 +86,7 @@ async function h(_name, _rssUrl, _title, _rss_version) {
                             const data = "base64://" + Buffer.from(response, 'utf-8').toString('base64');
                             imgArr += '[CQ:image,file=' + data + ']';
                         } catch (error) {
-                            console.log(new Date() + ':' + _name + '图片抓取失败\n' + error);
+                            console.log(clc.cyan(new Date() + '：') + clc.magenta(_name) + '：图片抓取失败\n' + clc.blackBright(error));
                         }
                     };
                 }
@@ -111,18 +112,18 @@ async function h(_name, _rssUrl, _title, _rss_version) {
                 '\n问题反馈群内联系：1733708055'
             }).then(() => {
                 _RSS_VERSION = date;
-                console.log(new Date() + ':' + _name + '更新发送成功');
+                console.log(clc.cyan(new Date() + '：') + clc.magenta(_name) + ' 更新发送成功');
             }).catch(err => {
-                console.log(new Date() + ':' + _name + '更新发送失败\n' + err);
+                console.log(clc.cyan(new Date() + '：') + '更新发送失败\n' + clc.blackBright(err));
             })
-        }else{
-            console.log(new Date() + ':' + _name + '没有更新，最后更新于：' + new Date(e.items[0].date_published))
+        } else {
+            console.log(clc.cyan(new Date() + '：') + clc.magenta(_name) + ' 没有更新，最后更新于：' + clc.cyan(new Date(e.items[0].date_published) + '：'));
         }
         setTimeout(() => {
             h(_name, _rssUrl, _title, _RSS_VERSION);
         }, 1000 * 60 * 5);
     } catch (error) {
-        console.log(new Date() + ':' + _name + '请求RSSHub失败\n' + error);
+        console.log(clc.cyan(new Date() + '：') + clc.magenta(_name) + '：请求RSSHub失败\n' + clc.blackBright(error));
         setTimeout(() => {
             h(_name, _rssUrl, _title, _RSS_VERSION);
         }, 1000 * 5);
