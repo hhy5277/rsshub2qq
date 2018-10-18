@@ -43,7 +43,8 @@ async function fanyi(str) {
             from: from,
             to: to,
             sign: sign
-        }
+        },
+        timeout: 1000 * 60
     });
     return JSON.parse(data);
 }
@@ -56,6 +57,7 @@ function h(config, timeout) {
     setTimeout(() => {
         rp.get(baseURL + config.url, {
             json: true,
+            timeout: 1000 * 60,
             qs: {
                 limit: 1
             }
@@ -78,6 +80,7 @@ function h(config, timeout) {
                         promises.push(rp({
                             method: 'GET',
                             url: src,
+                            timeout: 1000 * 60,
                             agentClass: Agent,
                             agentOptions: {
                                 socksHost: '127.0.0.1',
@@ -102,7 +105,7 @@ function h(config, timeout) {
                 const title = e.items[0].title === '' ? '' : ('\n标题：' + e.items[0].title);
                 const content = $('._x').text();
                 const fanyiText = (await fanyi(content)).trans_result[0].dst;
-                const imgs = imgArr === '' ? '暂无' : imgArr;
+                const imgs = imgArr === '' ? '暂无' : ('\n媒体：\n' + imgArr);
                 const url = e.items[0].url;
                 bot('send_group_msg', {
                     group_id: 57556801,
@@ -111,10 +114,10 @@ function h(config, timeout) {
                         title +
                         '\n内容：' + content +
                         '\n翻译：' + fanyiText +
-                        '\n媒体：\n' + imgs +
+                        imgs +
                         '\n-------------------------------------------' +
                         '\n原链接：' + url +
-                        '\n日期：' + date_published +
+                        '\n日期：' + e.items[0].date_published +
                         '\n来自————月月的机器人' +
                         '\n问题反馈群内联系：[CQ:at,qq=1733708055]'
                 }).then(() => {
@@ -136,18 +139,19 @@ function h(config, timeout) {
     }, timeout);
 };
 
-// // Twitter
-h({ name: 'Twitter-GARNIDELIA', url: '/twitter/user/GARNiDELiA.json'});
-h({ name: 'Twitter-toku_grnd', url: '/twitter/user/toku_grnd.json'});
-h({ name: 'Twitter-MARiA_GRND', url: '/twitter/user/MARiA_GRND.json'});
-// // Weibo
-h({ name: 'Weibo-MARiA_GARNiDELiA', url: '/weibo/user2/2060888642.json'});
-// // Bilibili
-h({ name: 'Bilibili-GARNiDELiA', url: '/bilibili/user/dynamic/111939335.json'});
-// // Instagram
-h({ name: 'Instagram-maria_grnd', url: '/instagram/user/maria_grnd.json'});
-h({ name: 'Instagram-toku_grnd', url: '/instagram/user/toku_grnd.json'});
-// // YouTube
-h({ name: 'YouTube-HeadphoneTokyo', url: '/youtube/user/HeadphoneTokyo.json'});
+[
+    { name: 'Twitter-GARNIDELIA', url: '/twitter/user/GARNiDELiA.json' },
+    { name: 'Twitter-toku_grnd', url: '/twitter/user/toku_grnd.json' },
+    { name: 'Twitter-MARiA_GRND', url: '/twitter/user/MARiA_GRND.json' },
+    { name: 'Weibo-MARiA_GARNiDELiA', url: '/weibo/user2/2060888642.json' },
+    { name: 'Bilibili-GARNiDELiA', url: '/bilibili/user/dynamic/111939335.json' },
+    { name: 'Instagram-maria_grnd', url: '/instagram/user/maria_grnd.json' },
+    { name: 'Instagram-toku_grnd', url: '/instagram/user/toku_grnd.json' },
+    { name: 'YouTube-HeadphoneTokyo', url: '/youtube/user/HeadphoneTokyo.json' }
+].forEach((p, index) => {
+    setTimeout(() => {
+        h(p)
+    }, 1000 * 10 * index);
+})
 
 bot.listen(8989, '127.0.0.1');
