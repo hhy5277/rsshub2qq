@@ -94,6 +94,7 @@ function h(config, timeout) {
                         });
                     } catch (error) {
                         console.log(clc.cyan(new Date() + '：') + clc.magenta(config.name) + '：图片抓取失败\n' + clc.blackBright(error));
+                        h(config, 1000 * 60 * 1);
                         return false;
                     }
                 }
