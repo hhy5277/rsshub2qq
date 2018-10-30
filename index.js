@@ -6,7 +6,6 @@ const cheerio = require('cheerio');
 const MD5 = require('js-md5');
 const Agent = require('socks5-https-client/lib/Agent');
 const clc = require("cli-color");
-const fs = require('fs').promises;
 
 let bot = new CQHttp({
     apiRoot: 'http://127.0.0.1:5700/',
@@ -25,7 +24,11 @@ function htmlDecode(str) {
     return str;
 }
 
-async function fanyi(str) {
+function log(log){
+    console.log(clc.cyan(new Date() + '：') + log);
+}
+
+async function fanyi(str) { // 百度翻译
     const appid = credentials.baidu.appid;
     const key = credentials.baidu.key;
     const salt = (new Date).getTime();
@@ -64,19 +67,26 @@ function h(config, timeout) {
         }).then(async e => {
             const date_published = (new Date(e.items[0].date_published)).getTime();
             if (!v[config.name]) { // 如果不存在说明是第一次请求
-                console.log(clc.cyan(new Date() + '：') + '首次请求 ' + clc.magenta(config.name));
+                log('首次请求' + config.name);
                 v[config.name] = date_published;
                 h(config);
                 return false;
             }
             if (v[config.name] < date_published) { //有更新
-                console.log(clc.cyan(new Date() + '：') + '发现更新 ' + clc.magenta(config.name));
+                log('发现更新' + config.name)
+                if (e.items[0].title.search('Re') !== -1) { // 如果是回复类型的推文则不推送
+                    h(config);
+                    return false;
+                }
                 const $ = cheerio.load('<div class="_x">' + htmlDecode(e.items[0].summary) + '</div>');
                 let imgArr = '';
-                if ($('img').length !== 0){
+                if ($('img').length !== 0){ // 如果有图片，请求并转换为base64编码
                     let promises = new Array();
-                    $('img').each(function (item) {
-                        const src = $(this).attr('src');
+                    $('img').each(function () {
+                        let src = $(this).attr('src');
+                        if (src.indexOf('https') === -1) {
+                            src = src.replace(/http/, 'https');
+                        }
                         promises.push(rp({
                             method: 'GET',
                             url: src,
@@ -96,59 +106,51 @@ function h(config, timeout) {
                             imgArr += '[CQ:image,file=' + data + ']';
                         });
                     } catch (error) {
-                        console.log(clc.cyan(new Date() + '：') + clc.magenta(config.name) + '：图片抓取失败\n' + clc.blackBright(error));
+                        log(config.name + '：图片抓取失败' + error);
                         h(config, 1000 * 60 * 1);
                         return false;
                     }
                 }
+                
                 const text = '【@' + config.name.split('-')[1] + '】的' + config.name.split('-')[0] + '更新了！';
                 const title = e.items[0].title === '' ? '' : ('\n标题：' + e.items[0].title);
                 const content = $('._x').text();
                 const fanyiText = (await fanyi(content)).trans_result[0].dst;
-                const imgs = imgArr === '' ? '暂无' : ('\n媒体：\n' + imgArr);
+                const imgs = imgArr === '' ? '' : ('\n媒体：\n' + imgArr);
                 const url = e.items[0].url;
                 bot('send_group_msg', {
-                    group_id: 57556801,
-                    message: text +
-                        '\n-------------------------------------------' +
-                        title +
-                        '\n内容：' + content +
-                        '\n翻译：' + fanyiText +
-                        imgs +
-                        '\n-------------------------------------------' +
-                        '\n原链接：' + url +
-                        '\n日期：' + e.items[0].date_published +
-                        '\n来自————月月的机器人' +
-                        '\n问题反馈群内联系：[CQ:at,qq=1733708055]'
+                    group_id: config.group_id,
+                    message: `\
+                        ${text}
+                        -------------------------------------------\
+                        ${title}
+                        内容：${content}
+                        翻译：${fanyiText}\
+                        ${imgs}
+                        -------------------------------------------
+                        原链接：${url}
+                        日期：${e.items[0].date_published}\
+                    `.replace(/^[^\S\n]+/gm, '')
                 }).then(() => {
-                    console.log(clc.cyan(new Date() + '：') + clc.magenta(config.name) + ' 更新发送成功');
+                    log(config.name + '更新发送成功');
                     v[config.name] = date_published;
                     h(config);
                 }).catch(err => {
-                    console.log(clc.cyan(new Date() + '：') + '更新发送失败\n' + clc.blackBright(err));
+                    log(config.name + ' 更新发送失败：' + err);
                     h(config, 1000 * 60 * 1);
                 })
             } else { //没有更新
-                console.log(clc.cyan(new Date() + '：') + clc.magenta(config.name) + ' 没有更新  最后更新于：' + clc.cyan(new Date(e.items[0].date_published)));
+                log(config.name + ' 没有更新  最后更新于：' + new Date(e.items[0].date_published));
                 h(config);
             }
         }).catch(error => {
-            console.log(clc.cyan(new Date() + '：') + clc.magenta(config.name) + '  请求RSSHub失败\n' + clc.blackBright(error));
+            log(config.name + '请求RSSHub失败' + error);
             h(config, 1000 * 60 * 1);
         })
     }, timeout);
 };
 
-[
-    { name: 'Twitter-GARNIDELIA', url: '/twitter/user/GARNiDELiA.json' },
-    { name: 'Twitter-toku_grnd', url: '/twitter/user/toku_grnd.json' },
-    { name: 'Twitter-MARiA_GRND', url: '/twitter/user/MARiA_GRND.json' },
-    { name: 'Weibo-MARiA_GARNiDELiA', url: '/weibo/user2/2060888642.json' },
-    { name: 'Bilibili-GARNiDELiA', url: '/bilibili/user/dynamic/111939335.json' },
-    { name: 'Instagram-maria_grnd', url: '/instagram/user/maria_grnd.json' },
-    { name: 'Instagram-toku_grnd', url: '/instagram/user/toku_grnd.json' },
-    { name: 'YouTube-HeadphoneTokyo', url: '/youtube/user/HeadphoneTokyo.json' }
-].forEach((p, index) => {
+credentials.data.forEach((p, index) => {
     setTimeout(() => {
         h(p)
     }, 1000 * 10 * index);
