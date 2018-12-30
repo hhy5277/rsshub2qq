@@ -52,7 +52,6 @@ function grss(config, timeout) {
     if (!upTime[config.name]) timeout = 0;
     setTimeout(() => {
         rp.get(baseURL + config.url, {
-            json: true,
             timeout: 1000 * 60,
             qs: {
                 limit: 1
@@ -63,7 +62,7 @@ function grss(config, timeout) {
                 const parser = new Parser();
                 let feed = await parser.parseString(e);
 
-                const date_published = dayjs(feed.items[0].date_published).unix();
+                const date_published = dayjs(feed.items[0].pubDate).unix();
                 if (!upTime[config.name]) { // 如果不存在说明是第一次请求
                     log('首次请求' + config.name);
                     upTime[config.name] = date_published;
@@ -88,7 +87,7 @@ function grss(config, timeout) {
                     if ($('img').length > 0){ // 如果有图片，请求并转换为base64编码
                         let promises = new Array();
                         $('img').each(function () {
-                            const src = $(this).attr('src');
+                            let src = $(this).attr('src');
 
                             // 把http链接转换成https
                             if(/https?/.test(src)){
@@ -121,8 +120,6 @@ function grss(config, timeout) {
                         }
                     }
 
-
-                    
                     const message = {
                         text: '【@' + config.name.split('-')[1] + '】的' + config.name.split('-')[0] + '更新了！',
                         title: feed.items[0].title === '' ? '' : `标题：${feed.items[0].title}\n`,
