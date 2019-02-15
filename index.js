@@ -13,7 +13,7 @@ const send = require('./utils/send');
 const credentials = require('./credentials');
 
 // RSSHUB链接
-const baseURL = 'https://mikurss.arukascloud.io';
+const baseURL = 'https://rsshub.app';
 
 function grss(config) {
     rp.get(baseURL + config.url, {
