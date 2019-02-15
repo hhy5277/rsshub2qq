@@ -96,6 +96,7 @@ function grss(config) {
 
                 send(message, config.group_id).then(() => {
                     log(`${config.name} 更新发送成功`);
+                    db.set(`grss[${config.name}]`, feed.items).write();
                     del.sync('./tmp');
                 }).catch(err => {
                     log(config.name + '更新发送失败', err.stack);

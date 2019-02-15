@@ -2,6 +2,7 @@
 node_modules
 tmp
 db.json
+test.js
 
 # local env files
 .env.local
