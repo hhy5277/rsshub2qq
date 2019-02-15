@@ -98,14 +98,16 @@ function grss(config) {
 
                 sendArr.push(send(message, config.group_id));
             }
-            Promise.all(sendArr).then(() => {
-                log(`${config.name} 更新发送成功`);
-                del.sync('./tmp');
-            }).catch(err => {
-                log(config.name + '更新发送失败', err.stack);
-                del.sync('./tmp');
-            })
-            db.set(`grss[${config.name}]`, feed.items).write();
+            if(items.length){
+                Promise.all(sendArr).then(() => {
+                    log(`${config.name} 更新发送成功`);
+                    del.sync('./tmp');
+                }).catch(err => {
+                    log(config.name + '更新发送失败', err.stack);
+                    del.sync('./tmp');
+                })
+                db.set(`grss[${config.name}]`, feed.items).write();
+            }
         })
         .catch(err => {
             if (err.statusCode) {
