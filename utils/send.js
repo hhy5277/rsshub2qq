@@ -2,16 +2,17 @@ const CQHttp = require('cqhttp');
 const credentials = require('../credentials');
 const _ = require('lodash');
 
-const bot = new CQHttp({
-    apiRoot: 'http://127.0.0.1:5700/',
-    accessToken: credentials.accessToken,
-    secret: credentials.secret
-});
+// const bot = new CQHttp({
+//     apiRoot: 'http://127.0.0.1:5700/',
+//     accessToken: credentials.accessToken,
+//     secret: credentials.secret
+// });
 
-bot.listen(8989, '127.0.0.1');
+// bot.listen(8989, '127.0.0.1');
 
-module.exports = async function(message, group){
+module.exports = function(message, group){
     return new Promise((resolve, reject) => {
+        console.log('进来了')
         let c = {
             message: `${message.text}\n` +
                 '----------------------------------\n' +
@@ -28,8 +29,8 @@ module.exports = async function(message, group){
                 bot('send_group_msg', _.chain(c).assign({
                     group_id: group_id
                 }).value()).then(resolve).catch(reject);
-            })
-        }else{
+            }).value()
+        } else {
             bot('send_group_msg', _.chain(c).assign({
                 group_id: group
             }).value()).then(resolve).catch(reject);
