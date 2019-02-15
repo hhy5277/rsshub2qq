@@ -8,8 +8,8 @@
 
 ```javascript
 module.exports = {
-    accessToken: 'mikutoken', //CQhttp插件配置
-    secret: 'mikuqwq', //CQhttp插件配置
+    accessToken: '', //CQhttp插件配置
+    secret: '', //CQhttp插件配置
     proxy: true, //是否启用 SSR 代理
     proxyConfig: { //SSR 代理配置
         socksHost: '127.0.0.1',
@@ -21,9 +21,9 @@ module.exports = {
     },
     rss: [
         {
-            name: 'Twitter-GARNIDELIA', //rss名称，
-            url: '/twitter/user/GARNiDELiA.json', //RSSHub的路由
-            group_id: [57556801], //可以是Array也可以是Number
+            name: 'Twitter-GARNIDELIA', //rss名称
+            url: '/twitter/user/GARNiDELiA', //RSSHub的路由
+            group_id: [123456789], //可以是Array也可以是Number
             translate: true //是否启用内容翻译
         }, //订阅信息
     ]
