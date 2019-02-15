@@ -48,8 +48,6 @@ function grss(config) {
                 return !flag;
             }).value();
 
-            let mediaArr = '';
-            let sendArr = [];
             if(items.length){
                 log(`发现了 ${items.length} 条更新`);
             }else{
@@ -60,6 +58,9 @@ function grss(config) {
                 const content = item.content.replace(/<br><video.+?><\/video>|<br><img.+?>/g, e => {
                     return e.replace(/<br>/, '');
                 })
+                
+                let mediaArr = '';
+                let sendArr = [];
                 // 解析HTML
                 const $ = cheerio.load(content.replace(/<br>/g, '\n'));
                 if ($('img').length || $('video').length) {
