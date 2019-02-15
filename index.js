@@ -7,7 +7,7 @@ const _ = require('lodash');
 const del = require('del');
 const db = require('./utils/db');
 const log = require('./utils/log');
-const downloadImtg = require('./utils/downloadImg');
+const downloadImg = require('./utils/downloadImg');
 const translate = require('./utils/translate');
 const send = require('./utils/send');
 const credentials = require('./credentials');
@@ -75,7 +75,8 @@ function grss(config) {
                     })
 
                     try {
-                        _.chain(await downloadImtg(imgs)).each(e => {
+                        let imagePath = await downloadImg(imgs);
+                        _.chain(imagePath).each(e => {
                             mediaArr += '[CQ:image,file=' + e + ']';
                         }).value();
                     } catch (error) {
