@@ -42,7 +42,7 @@ module.exports = function (imgarr) {
                 const imgType = fileType(response).ext;
                 const imgPath = path.join(__dirname, `../tmp/${_.random(0, 999999)}.${imgType}`);
                 fs.writeFileSync(imgPath, response);
-                files.push(imgPath);
+                files.push(`file:///${imgPath}`);
             });
             resolve(files);
         }).catch(err => {

@@ -13,7 +13,7 @@ const send = require('./utils/send');
 const credentials = require('./credentials');
 
 // RSSHUB链接
-const baseURL = 'http://207.148.112.16:1200';
+const baseURL = 'https://rsshub.app';
 
 function grss(config) {
     rp.get(baseURL + config.url, {
