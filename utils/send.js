@@ -25,12 +25,12 @@ module.exports = async function(message, group){
         }
         if(_.isArray(group)){
             _.chain(group).each(group_id => {
-                bot('send_group_msg', _.chain(c, {
+                bot('send_group_msg', _.chain(c).assign({
                     group_id: group_id
                 }).value()).then(resolve).catch(reject);
             })
         }else{
-            bot('send_group_msg', _.chain(c, {
+            bot('send_group_msg', _.chain(c).assign({
                 group_id: group
             }).value()).then(resolve).catch(reject);
         }
