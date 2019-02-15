@@ -1,172 +1,116 @@
 "use strict";
-const CQHttp = require('cqhttp');
-const credentials = require('./credentials');
 const rp = require('request-promise');
 const cheerio = require('cheerio');
-const MD5 = require('js-md5');
 const Parser = require('rss-parser');
-const Agent = require('socks5-https-client/lib/Agent');
-const clc = require("cli-color");
 const dayjs = require('dayjs');
+const _ = require('lodash');
+const del = require('del');
+const db = require('./utils/db');
+const log = require('./utils/log');
+const downloadImtg = require('./utils/downloadImg');
+const translate = require('./utils/translate');
+const send = require('./utils/send');
+const credentials = require('./credentials');
 
-const bot = new CQHttp({
-    apiRoot: 'http://127.0.0.1:5700/',
-    accessToken: credentials.accessToken,
-    secret: credentials.secret
-});
-
-const baiduTranslate = async (str) => {
-    const appid = credentials.baidu.appid;
-    const key = credentials.baidu.key;
-    const salt = (new Date).getTime();
-    const query = str;
-    const from = 'auto';
-    const to = 'zh';
-    const str1 = appid + query + salt + key;
-    const sign = MD5(str1);
-
-    const data = await rp.get('http://api.fanyi.baidu.com/api/trans/vip/translate', {
-        qs: {
-            q: query,
-            appid: appid,
-            salt: salt,
-            from: from,
-            to: to,
-            sign: sign
-        },
-        json: true
-    });
-    return data.trans_result[0].dst;
-}
-
-const log = (log) => {
-    let date = dayjs(new Date()).format('YY年M月D日HH:mm:ss');
-    console.log(clc.cyan(date + '：') + log);
-}
-
-let upTime = new Object(); // 保存rss每次拉取的时间
+// RSSHUB链接
 const baseURL = 'https://rsshub.app';
 
-function grss(config, timeout) {
-    if (!timeout) timeout = 1000 * 60 * 5;
-    if (!upTime[config.name]) timeout = 0;
-    setTimeout(() => {
+function grss(config) {
+    setInterval(function () {
         rp.get(baseURL + config.url, {
-            timeout: 1000 * 60,
-            qs: {
-                limit: 1
-            }
-        })
-            .then(async e => {
-                // 解析RSS
-                const parser = new Parser();
-                let feed = await parser.parseString(e);
+                qs: {
+                    limit: 5
+                },
+                transform: async function (body, response, resolveWithFullResponse) {
+                    if (response.headers['content-type'] === 'application/xml; charset=utf-8') {
+                        const parser = new Parser();
+                        const feed = await parser.parseString(body);
+                        return feed;
+                    } else {
+                        return body;
+                    }
+                }
+            })
+            .then(async function (feed) {
+                const oldFeed = db.get(`grss[${config.name}]`).value();
 
-                const date_published = dayjs(feed.items[0].pubDate).unix();
-                if (!upTime[config.name]) { // 如果不存在说明是第一次请求
+                if (!oldFeed) { // 如果不存在说明是第一次请求
                     log('首次请求' + config.name);
-                    upTime[config.name] = date_published;
-                    grss(config);
+                    db.set(`grss[${config.name}]`, feed.items).write();
                     return false;
                 }
 
-                if (upTime[config.name] < date_published) { //有更新
-                    log('发现更新' + config.name)
+                let items = _.chain(feed.items).differenceBy(oldFeed, 'guid');
 
-                    if (feed.items[0].title.search('Re') !== -1) { // 如果是回复类型的推文则不推送
-                        log('回复推文，不推送');
-                        grss(config);
-                        return false;
-                    }
+                // 过滤回复和转发推文
+                items = items.filter(function (o) {
+                    let title = o.title;
+                    let flag = title.search('Re') !== -1 || title.search('转发了') !== -1;
+                    return !flag;
+                }).value();
 
+                let mediaArr = '';
+                for (let index = 0; index < items.length; index++) {
+                    const item = items[index];
+                    const content = item.content.replace(/<br><video.+?><\/video>|<br><img.+?>/g, e => {
+                        return e.replace(/<br>/, '');
+                    })
                     // 解析HTML
-                    const $ = cheerio.load(feed.items[0].content);
+                    const $ = cheerio.load(content.replace(/<br>/g, '\n'));
+                    if ($('img').length || $('video').length) {
+                        let imgs = new Array();
 
-                    let imgArr = '';
-
-                    if ($('img').length > 0){ // 如果有图片，请求并转换为base64编码
-                        let promises = new Array();
                         $('img').each(function () {
-                            let src = $(this).attr('src');
-
-                            // 把http链接转换成https
-                            if(/https?/.test(src)){
-                                src = src.replace(/https?/, 'https');
-                            }
-                            
-                            promises.push(rp({
-                                method: 'GET',
-                                url: src,
-                                timeout: 1000 * 60,
-                                agentClass: Agent,
-                                agentOptions: {
-                                    socksHost: '127.0.0.1',
-                                    socksPort: 1080
-                                },
-                                encoding: null
-                            }))
-
+                            const src = $(this).attr('src');
+                            if (src) imgs.push(src);
                         })
+
+                        $('video').each(function () {
+                            const src = $(this).attr('poster');
+                            if (src) imgs.push(src);
+                        })
+
                         try {
-                            let images = await Promise.all(promises);
-                            images.forEach(response => {
-                                const data = "base64://" + Buffer.from(response, 'utf-8').toString('base64');
-                                imgArr += '[CQ:image,file=' + data + ']';
-                            });
+                            _.chain(await downloadImtg(imgs)).each(e => {
+                                mediaArr += '[CQ:image,file=' + e + ']';
+                            })
                         } catch (error) {
-                            log(config.name + '：图片抓取失败' + error);
-                            grss(config, 1000 * 60 * 1);
+                            log(config.name + '：图片抓取失败', error.stack);
                             return false;
                         }
                     }
 
                     const message = {
-                        text: '【@' + config.name.split('-')[1] + '】的' + config.name.split('-')[0] + '更新了！',
-                        title: feed.items[0].title === '' ? '' : `标题：${feed.items[0].title}\n`,
-                        content: feed.items[0].contentSnippet,
-                        translateText: (await baiduTranslate(feed.items[0].contentSnippet)),
-                        imgs: imgArr === '' ? '' : ('媒体：\n' + imgArr + '\n'),
-                        url: feed.items[0].link,
-                        date: dayjs(feed.items[0].pubDate).format('YY年M月D日HH:mm:ss')
+                        text: `【${feed.title}】更新了！`,
+                        title: config.title ? `标题：${item.title}\n` : '',
+                        content: $('video').length ? `${$.text()}\n${$('video').length}个视频，点击原链接查看` : $.text(),
+                        translateText: config.translate ? `翻译：${(await translate($.text()))}\n` : '',
+                        images: mediaArr === '' ? '' : ('媒体：\n' + mediaArr + '\n'),
+                        url: item.link,
+                        date: dayjs(item.pubDate).format('YY年M月D日HH:mm:ss'),
                     }
-                    bot('send_group_msg', {
-                        group_id: config.group_id,
-                        message: 
-                            `${message.text}\n` + 
-                            '-------------------------------------------\n' + 
-                            `${message.title}` + 
-                            `内容：${message.content}\n` + 
-                            `${message.translateText}` + 
-                            `${message.imgs}` + 
-                            '-------------------------------------------\n' + 
-                            `原链接：${message.url}\n` + 
-                            `日期：${message.date}`
+
+                    send(message, config.group_id).then(() => {
+                        log(`${config.name} 更新发送成功`);
+                        del.sync('./tmp');
+                    }).catch(err => {
+                        log(config.name + '更新发送失败', err.stack);
+                        del.sync('./tmp');
                     })
-                        .then(() => {
-                            log(config.name + '更新发送成功');
-                            upTime[config.name] = date_published;
-                            grss(config);
-                        })
-                        .catch(error => {
-                            log(config.name + ' 更新发送失败：' + error);
-                            grss(config, 1000 * 60 * 1);
-                        })
-                } else { //没有更新
-                    log(config.name + ' 没有更新  最后更新于：' + dayjs(feed.items[0].pubDate).format('YY年M月D日HH:mm:ss'));
-                    grss(config);
                 }
             })
-            .catch(error => {
-                log(config.name + '请求RSSHub失败' + error);
-                grss(config, 1000 * 60 * 1);
+            .catch(err => {
+                if (err.statusCode) {
+                    log(config.name + '请求RSSHub失败', err.statusCode);
+                } else {
+                    log(config.name + '请求RSSHub失败', err.stack);
+                }
             })
-    }, timeout);
+    }, 1000 * 60 * 5); //5分钟更新一次
 };
 
-credentials.list.forEach((config, index) => {
+credentials.rss.forEach((config, index) => {
     setTimeout(() => {
         grss(config)
     }, 1000 * 10 * index);
 })
-
-bot.listen(8989, '127.0.0.1');

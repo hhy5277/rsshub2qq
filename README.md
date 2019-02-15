@@ -8,14 +8,24 @@
 
 ```javascript
 module.exports = {
-    accessToken: '123456', //cqhttp插件配置
-    secret: '123456',
-    baidu: { //百度翻译的信息
-        appid: '123456',
-        key: '123456'
+    accessToken: 'mikutoken', //CQhttp插件配置
+    secret: 'mikuqwq', //CQhttp插件配置
+    proxy: true, //是否启用 SSR 代理
+    proxyConfig: { //SSR 代理配置
+        socksHost: '127.0.0.1',
+        socksPort: 1080
     },
-    list: [
-        { name: 'Twitter-Ice_Hayzmoon', url: '/twitter/user/Ice_Hayzmoon', group_id: 57556801}, //订阅信息
+    baidu: { // 百度翻译的api信息
+        appid: '',
+        key: ''
+    },
+    rss: [
+        {
+            name: 'Twitter-GARNIDELIA', //rss名称，
+            url: '/twitter/user/GARNiDELiA.json', //RSSHub的路由
+            group_id: [57556801], //可以是Array也可以是Number
+            translate: true //是否启用内容翻译
+        }, //订阅信息
     ]
 }
 ```
