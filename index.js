@@ -13,7 +13,7 @@ const send = require('./utils/send');
 const credentials = require('./credentials');
 
 // RSSHUB链接
-const baseURL = 'https://rsshub.app';
+const baseURL = 'http://207.148.112.16:1200';
 
 function grss(config) {
     rp.get(baseURL + config.url, {
@@ -49,6 +49,7 @@ function grss(config) {
             }).value();
 
             let mediaArr = '';
+            let sendArr = [];
             if(items.length){
                 log(`发现了 ${items.length} 条更新`);
             }else{
@@ -95,15 +96,16 @@ function grss(config) {
                     date: dayjs(item.pubDate).format('YY年M月D日HH:mm:ss'),
                 }
 
-                send(message, config.group_id).then(() => {
-                    log(`${config.name} 更新发送成功`);
-                    db.set(`grss[${config.name}]`, feed.items).write();
-                    del.sync('./tmp');
-                }).catch(err => {
-                    log(config.name + '更新发送失败', err.stack);
-                    del.sync('./tmp');
-                })
+                sendArr.push(send(message, config.group_id));
             }
+            Promise.all(sendArr).then(() => {
+                log(`${config.name} 更新发送成功`);
+                del.sync('./tmp');
+            }).catch(err => {
+                log(config.name + '更新发送失败', err.stack);
+                del.sync('./tmp');
+            })
+            db.set(`grss[${config.name}]`, feed.items).write();
         })
         .catch(err => {
             if (err.statusCode) {

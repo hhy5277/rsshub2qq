@@ -24,11 +24,15 @@ module.exports = function(message, group){
                 `日期：${message.date}`
         }
         if(_.isArray(group)){
+            let sendArr = [];
             _.chain(group).each(group_id => {
-                bot('send_group_msg', _.chain(c).assign({
-                    group_id: group_id
-                }).value()).then(resolve).catch(reject);
+                sendArr.push(
+                    bot('send_group_msg', _.chain(c).assign({
+                        group_id: group_id
+                    }).value())
+                )
             }).value();
+            Promise.all(sendArr).then(resolve).catch(reject);
         } else {
             bot('send_group_msg', _.chain(c).assign({
                 group_id: group
