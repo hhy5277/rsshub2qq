@@ -49,9 +49,9 @@ function grss(config) {
             }).value();
 
             if(items.length){
-                log(`发现了 ${items.length} 条更新`);
+                log(`${config.name} 发现了 ${items.length} 条更新`);
             }else{
-                log(`没有发现更新`);
+                log(`${config.name} 没有发现更新`);
             }
             let sendArr = [];
             for (let index = 0; index < items.length; index++) {
@@ -82,7 +82,7 @@ function grss(config) {
                             mediaArr += '[CQ:image,file=' + e + ']';
                         }).value();
                     } catch (error) {
-                        log(config.name + '：图片抓取失败', error.stack);
+                        log(`${config.name}：图片抓取失败`, error.stack);
                         return false;
                     }
                 }
@@ -104,7 +104,7 @@ function grss(config) {
                     log(`${config.name} 更新发送成功`);
                     del.sync('./tmp');
                 }).catch(err => {
-                    log(config.name + '更新发送失败', err.stack ? err.stack : err);
+                    log(`${config.name} 更新发送失败`, err.stack ? err.stack : err);
                     del.sync('./tmp');
                 })
                 db.set(`grss[${config.name}]`, feed.items).write();
@@ -112,9 +112,9 @@ function grss(config) {
         })
         .catch(err => {
             if (err.statusCode) {
-                log(config.name + '请求RSSHub失败', err.statusCode);
+                log(`${config.name} 请求RSSHub失败`, err.statusCode);
             } else {
-                log(config.name + '请求RSSHub失败', err.stack);
+                log(`${config.name} 请求RSSHub失败`, err.stack);
             }
         })
 };
