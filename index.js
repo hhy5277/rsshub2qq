@@ -53,6 +53,7 @@ function grss(config) {
             }else{
                 log(`没有发现更新`);
             }
+            let sendArr = [];
             for (let index = 0; index < items.length; index++) {
                 const item = items[index];
                 const content = item.content.replace(/<br><video.+?><\/video>|<br><img.+?>/g, e => {
@@ -60,7 +61,6 @@ function grss(config) {
                 })
                 
                 let mediaArr = '';
-                let sendArr = [];
                 // 解析HTML
                 const $ = cheerio.load(content.replace(/<br>/g, '\n'));
                 if ($('img').length || $('video').length) {
@@ -104,7 +104,7 @@ function grss(config) {
                     log(`${config.name} 更新发送成功`);
                     del.sync('./tmp');
                 }).catch(err => {
-                    log(config.name + '更新发送失败', err.stack);
+                    log(config.name + '更新发送失败', err.stack ? err.stack : err);
                     del.sync('./tmp');
                 })
                 db.set(`grss[${config.name}]`, feed.items).write();
