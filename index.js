@@ -89,8 +89,8 @@ function grss(config) {
 
                 const message = {
                     text: `【${feed.title}】更新了！`,
-                    title: config.title ? `标题：${item.title}\n` : '',
-                    content: $('video').length ? `${$.text()}\n${$('video').length}个视频，点击原链接查看` : $.text(),
+                    title: `标题：${item.title}\n`,
+                    content: $('video').length ? `${$.text().trim()}\n${$('video').length}个视频，点击原链接查看` : $.text().trim(),
                     translateText: config.translate ? `翻译：${(await translate($.text()))}\n` : '',
                     images: mediaArr === '' ? '' : ('媒体：\n' + mediaArr + '\n'),
                     url: item.link,

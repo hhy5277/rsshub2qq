@@ -10,33 +10,34 @@ const bot = new CQHttp({
 
 bot.listen(8989, '127.0.0.1');
 
-module.exports = function(message, group){
+module.exports = function (msg, group) {
     return new Promise((resolve, reject) => {
-        let c = {
-            message: `${message.text}\n` +
-                '----------------------------------\n' +
-                `${message.title}` +
-                `内容：${message.content}\n` +
-                `${message.translateText}` +
-                `${message.images}` +
-                '----------------------------------\n' +
-                `原链接：${message.url}\n` +
-                `日期：${message.date}`
-        }
-        if(_.isArray(group)){
+        const message = `${msg.text}\n` +
+            '----------------------------------\n' +
+            `${msg.title}` +
+            `内容：${msg.content}\n` +
+            `${msg.translateText}` +
+            `${msg.images}` +
+            '----------------------------------\n' +
+            `原链接：${msg.url}\n` +
+            `日期：${msg.date}`
+
+        if (_.isArray(group)) {
             let sendArr = [];
-            _.chain(group).each(group_id => {
+            group.forEach(group_id => {
                 sendArr.push(
-                    bot('send_group_msg', _.chain(c).assign({
-                        group_id: group_id
-                    }).value())
+                    bot('send_group_msg', {
+                        group_id: group_id,
+                        message: message
+                    })
                 )
-            }).value();
+            });
             Promise.all(sendArr).then(resolve).catch(reject);
         } else {
-            bot('send_group_msg', _.chain(c).assign({
-                group_id: group
-            }).value()).then(resolve).catch(reject);
+            bot('send_group_msg', {
+                group_id: group,
+                message: message
+            }).then(resolve).catch(reject);
         }
     })
 }
