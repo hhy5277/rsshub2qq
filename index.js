@@ -102,10 +102,14 @@ function grss(config) {
             if(items.length){
                 Promise.all(sendArr).then(() => {
                     log(`${config.name} 更新发送成功`);
-                    del.sync('./tmp');
+                    setTimeout(() => {
+                        del.sync('./tmp');
+                    }, 1000 * 60 * 2)
                 }).catch(err => {
                     log(`${config.name} 更新发送失败`, err.stack ? err.stack : err);
-                    del.sync('./tmp');
+                    setTimeout(() => {
+                        del.sync('./tmp');
+                    }, 1000 * 60 * 2)
                 })
                 db.set(`grss[${config.name}]`, feed.items).write();
             }
